@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aves da Barrinha de Esmoriz</title>
+<style>
+:root{
+  --bg:#f7fbf8; --card:#ffffff; --text:#17342b; --muted:#60756d;
+  --border:#d9e6df; --accent:#2f8f5b; --accent2:#dff3e7;
+  --bad:#c85050; --badbg:#fdeeee; --ok:#2f8f5b; --okbg:#eaf7ef;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.app{max-width:1100px;margin:0 auto;padding:24px}
+header{text-align:center;margin-bottom:18px}
+h1{margin:0;font-size:clamp(28px,4vw,44px);letter-spacing:.04em}
+.subtitle{margin-top:6px;color:var(--muted);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:16px}
+.cipher-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+.cipher-wrap{overflow-x:auto}
+.cipher{min-width:760px;font-family:Consolas,monospace;font-weight:700}
+.cipher-row{display:grid;grid-template-columns:90px 1fr;align-items:center;line-height:1.8}
+.cipher-letters{letter-spacing:.18em;white-space:nowrap}
+.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:16px 0}
+.stats{display:flex;gap:10px}
+.stat{min-width:90px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:9px 12px;text-align:center}
+.stat b{display:block;font-size:22px}
+.main{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}
+.bird-card,.task-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+.bird-wrap{min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.bird-art{width:100%;max-width:320px}
+.bird-name{font-size:28px;font-weight:900;letter-spacing:.04em;margin-top:4px}
+.clue{color:var(--muted);margin-top:8px}
+.boxes{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px 16px;margin-top:22px}
+.word-group{display:inline-flex;gap:6px;flex-wrap:nowrap;padding:8px;border-radius:14px;background:#f4f8f6;border:1px solid var(--border)}
+.letter-box{width:44px;height:48px;flex:0 0 44px;text-align:center;font-size:21px;font-weight:900;text-transform:uppercase;border:2px solid var(--border);border-radius:10px;background:#fff;color:var(--text);outline:none}
+.letter-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,143,91,.15)}
+.letter-ok{border-color:var(--ok);background:var(--okbg)}
+.letter-bad{border-color:var(--bad);background:var(--badbg)}
+.dash{font-size:28px;font-weight:900;color:var(--muted)}
+.feedback{margin-top:20px;min-height:58px;border:1px dashed var(--border);border-radius:12px;padding:13px;color:var(--muted)}
+.actions{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+button{min-height:44px;border-radius:11px;border:1px solid var(--border);padding:9px 14px;background:#fff;color:var(--text);font-weight:800;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.finish{text-align:center;display:none}
+.finish.show{display:block}
+@media(max-width:760px){
+  .app{padding:14px}.main{grid-template-columns:1fr}.topline{align-items:flex-start;flex-direction:column}
+  .letter-box{width:38px;height:43px;flex-basis:38px;font-size:18px}.word-group{gap:4px;padding:6px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>AVES DA BARRINHA DE ESMORIZ</h1>
+    <div class="subtitle">Descobre os nomes secretos com a Cifra de César</div>
+  </header>
+
+  <section class="panel">
+    <div class="cipher-head">
+      <strong>Cifra de César</strong>
+      <strong>A → N &nbsp;•&nbsp; N → A</strong>
+    </div>
+    <div class="cipher-wrap">
+      <div class="cipher">
+        <div class="cipher-row"><span>Normal</span><span class="cipher-letters" id="normal"></span></div>
+        <div class="cipher-row"><span>Código</span><span class="cipher-letters" id="code"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="topline">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--muted)">MISSÃO</div>
+      <div style="font-size:23px;font-weight:900">Codifica o nome da ave</div>
+    </div>
+    <div class="stats">
+      <div class="stat">Pontos<b id="score">0</b></div>
+      <div class="stat">Ave<b id="progress">1/8</b></div>
+    </div>
+  </div>
+
+  <section class="main">
+    <div class="bird-card">
+      <div class="bird-wrap">
+        <div id="birdArt" class="bird-art"></div>
+        <div style="font-size:12px;font-weight:800;color:var(--muted)">AVE DA BARRINHA</div>
+        <div id="birdName" class="bird-name"></div>
+        <div id="clue" class="clue"></div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <strong>Escreve o código:</strong>
+      <div class="clue">Cada grupo corresponde a uma palavra do nome da ave.</div>
+      <div id="boxes" class="boxes"></div>
+      <div id="feedback" class="feedback">Consulta a cifra no topo e escreve uma letra em cada quadrado.</div>
+      <div class="actions">
+        <button class="primary" id="check">✓ Verificar</button>
+        <button id="clear">Limpar</button>
+        <button id="hint">💡 Pista</button>
+        <button id="solution">Ver solução</button>
+        <button id="next" disabled>Próxima →</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="finish" class="panel finish">
+    <div style="font-size:50px">🏆</div>
+    <h2>Missão concluída!</h2>
+    <p id="finalText"></p>
+    <button class="primary" id="restart">Jogar novamente</button>
+  </section>
+</div>
+
+<script>
+const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const coded='NOPQRSTUVWXYZABCDEFGHIJKLM';
+
+const birds=[
+{name:'PATO-REAL',type:'duck',clue:'Observa a cabeça verde, o peito castanho e o bico amarelo.',colors:['#08765b','#80462d','#c8c6b9','#f0b51d','#24313a']},
+{name:'GARÇA-REAL',type:'heron',clue:'Ave alta, com pescoço comprido e plumagem cinzenta.',colors:['#aeb7bd','#e3e3dc','#222a2e','#e3a43a','#5c6265']},
+{name:'PILRITO-DAS-PRAIAS',type:'shore',clue:'Pequena ave com dorso cinzento-acastanhado e ventre branco.',colors:['#a99d8b','#f3efe5','#2d3031','#202324','#c8b69b']},
+{name:'GUINCHO-COMUM',type:'gull',clue:'Corpo claro, asas cinzentas e detalhes escuros na cabeça.',colors:['#dfe2e2','#f7f5ed','#3a3533','#bb332d','#8f999e']},
+{name:'FUINHA-DOS-JUNCOS',type:'passerine',clue:'Pequena ave castanha que vive entre juncos e vegetação baixa.',colors:['#9b6b40','#d2ab7b','#65442c','#222222','#ba8b59']},
+{name:'ROUXINOL-BRAVO',type:'passerine',clue:'Ave castanha e discreta, habitual em vegetação densa.',colors:['#8f6542','#c49b6d','#5b402d','#24211e','#b37c50']},
+{name:'CARTAXO-COMUM',type:'passerine',clue:'Pequena ave em tons castanhos e alaranjados.',colors:['#6f513d','#bf8051','#ded0b9','#24201e','#9d7455']},
+{name:'ESTORNINHO-MALHADO',type:'starling',clue:'Ave escura com muitos pequenos pontos claros.',colors:['#252c2d','#334941','#ebe1cc','#27211e','#171b1d']}
+];
+
+document.getElementById('normal').textContent=alphabet.split('').join(' ');
+document.getElementById('code').textContent=coded.split('').join(' ');
+
+let order=[],index=0,score=0,attempts=0,solved=false,usedHint=false;
+
+function strip(t){return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
+function encode(t){return strip(t).split('').map(ch=>{const i=alphabet.indexOf(ch);return i<0?ch:coded[i]}).join('');}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
+function current(){return birds[order[index]];}
+
+function birdSVG(b){
+  const c=b.colors;
+  const base=`<svg viewBox="0 0 340 225" role="img" aria-label="${b.name}" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="170" cy="205" rx="112" ry="8" fill="#000" opacity=".055"/>`;
+
+  if(b.type==='duck') return base+`
+    <!-- Pato-real: corpo robusto, cabeça verde, bico largo e arredondado -->
+    <path d="M58 146 Q78 114 124 106 Q177 96 219 117 Q239 128 244 146 Q236 171 195 182 Q139 194 90 173 Q67 162 58 146Z" fill="#cbc8bd"/>
+    <path d="M81 133 Q115 107 174 111 Q166 139 114 157 Q92 153 81 133Z" fill="#7f5940"/>
+    <path d="M106 123 Q145 106 182 118 Q161 142 121 147Z" fill="#4f73a8"/>
+    <path d="M71 146 Q49 143 30 132 Q51 129 78 134Z" fill="#2f373b"/>
+    <path d="M189 123 Q187 100 198 84 Q210 66 232 62 Q255 60 270 77 Q281 89 280 108 Q277 126 260 136 Q231 148 199 133Z" fill="#236a56"/>
+    <path d="M194 120 Q216 124 245 120" fill="none" stroke="#f2efe2" stroke-width="7" stroke-linecap="round"/>
+    <path d="M246 93 Q263 84 283 85 Q301 86 316 97 Q322 101 322 107 Q321 114 314 118 Q299 127 278 128 Q258 129 244 123 Q238 117 237 108 Q237 99 246 93Z" fill="#c68a15"/>
+    <path d="M249 95 Q266 90 284 91 Q298 92 309 99" fill="none" stroke="#9b680d" stroke-width="2.3" stroke-linecap="round"/>
+    <circle cx="249" cy="80" r="4.3" fill="#111"/>
+    <circle cx="269" cy="104" r="2.1" fill="#8f5c0d" opacity=".9"/>
+    <path d="M186 118 Q176 105 161 99 Q183 94 200 102Z" fill="#855039"/>
+    <path d="M118 180 Q113 194 106 202 M157 183 Q153 197 147 204" stroke="#e2a12b" stroke-width="5" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.type==='heron') return base+`
+    <!-- Garça-real: pescoço longo em S, bico comprido, pernas longas -->
+    <path d="M161 150 Q172 122 191 107 Q208 95 208 76 Q207 58 223 46 Q240 33 259 39 Q243 47 239 59 Q235 74 244 89 Q251 102 244 117 Q235 136 217 152Z" fill="#e5e3db"/>
+    <path d="M230 43 Q248 29 268 35 Q254 44 250 55Z" fill="#22292d"/>
+    <path d="M251 43 L324 49 L255 62Z" fill="#dda445"/>
+    <circle cx="252" cy="44" r="4" fill="#111"/>
+    <path d="M82 151 Q102 113 148 106 Q191 101 219 128 Q212 160 175 177 Q123 191 86 171Z" fill="#afb7bd"/>
+    <path d="M108 128 Q149 103 200 121 Q172 152 121 159Z" fill="#697279"/>
+    <path d="M96 156 Q68 151 49 139 Q69 137 94 142Z" fill="#717b80"/>
+    <path d="M128 177 L118 220 M178 177 L186 220" stroke="#8b7158" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M118 220 L98 223 M186 220 L205 223" stroke="#8b7158" stroke-width="3.4" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.type==='shore') return base+`
+    <!-- Pilrito-das-praias: pequeno, arredondado, bico fino escuro -->
+    <ellipse cx="149" cy="147" rx="70" ry="39" fill="#f3efe6"/>
+    <path d="M79 141 Q104 107 158 109 Q190 109 208 130 Q178 151 111 158Z" fill="#ae9f8b"/>
+    <path d="M104 123 Q133 106 168 116 Q152 137 116 143Z" fill="#7e7368" opacity=".78"/>
+    <circle cx="214" cy="120" r="28" fill="#f0ece3"/>
+    <path d="M220 120 Q264 123 307 138" fill="none" stroke="#26292b" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="220" cy="114" r="4" fill="#111"/>
+    <path d="M85 147 Q64 145 48 136 Q66 133 89 136Z" fill="#8f8476"/>
+    <path d="M131 181 L129 205 M166 181 L169 205" stroke="#514b44" stroke-width="3.4" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.type==='gull') return base+`
+    <!-- Guincho-comum: forma de gaivota, cabeça escura, bico fino vermelho -->
+    <path d="M71 150 Q89 116 141 107 Q193 98 225 124 Q233 144 217 160 Q191 181 139 184 Q93 182 71 150Z" fill="#f7f5ed"/>
+    <path d="M92 128 Q135 103 193 115 Q173 144 120 154Z" fill="#929da2"/>
+    <path d="M72 149 Q49 146 32 136 Q51 133 77 138Z" fill="#8b959a"/>
+    <circle cx="229" cy="109" r="31" fill="#403936"/>
+    <path d="M251 111 L302 119 L253 129Z" fill="#bb332d"/>
+    <circle cx="237" cy="102" r="4" fill="#f4f4ee"/>
+    <circle cx="238" cy="102" r="2.1" fill="#111"/>
+    <path d="M128 183 L125 207 M172 182 L176 207" stroke="#c4403b" stroke-width="4" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.name==='FUINHA-DOS-JUNCOS') return base+`
+    <!-- Fuinha-dos-juncos: pequena, castanha, cauda comprida e levantada -->
+    <path d="M101 160 Q114 127 151 119 Q188 113 214 134 Q220 153 204 166 Q176 185 134 178 Q108 174 101 160Z" fill="#a16e42"/>
+    <path d="M121 134 Q150 116 184 128 Q169 151 135 157Z" fill="#d2a271"/>
+    <circle cx="217" cy="124" r="23" fill="#9c693f"/>
+    <path d="M236 125 L273 132 L237 138Z" fill="#46342a"/>
+    <circle cx="224" cy="118" r="3.8" fill="#111"/>
+    <path d="M104 158 L64 123 L94 166Z" fill="#8d5e39"/>
+    <path d="M64 123 L50 101" stroke="#8d5e39" stroke-width="7" stroke-linecap="round"/>
+    <path d="M151 178 L148 201 M178 176 L183 201" stroke="#6f5440" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.name==='ROUXINOL-BRAVO') return base+`
+    <!-- Rouxinol-bravo: castanho uniforme, bico fino, cauda arredondada -->
+    <path d="M83 153 Q103 121 148 114 Q189 109 216 132 Q221 153 205 166 Q179 184 133 180 Q100 177 83 153Z" fill="#8f6542"/>
+    <path d="M106 136 Q144 113 184 127 Q168 151 127 160Z" fill="#ad8057"/>
+    <circle cx="218" cy="122" r="25" fill="#8b6040"/>
+    <path d="M238 123 L279 128 L239 134Z" fill="#3f3127"/>
+    <circle cx="225" cy="115" r="4" fill="#111"/>
+    <path d="M89 151 Q61 145 44 132 Q66 130 93 139Z" fill="#7a5238"/>
+    <path d="M144 179 L141 202 M176 178 L181 202" stroke="#6a503d" stroke-width="3.2" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.name==='CARTAXO-COMUM') return base+`
+    <!-- Cartaxo-comum: cabeça escura, peito alaranjado, postura direita -->
+    <path d="M94 157 Q106 122 145 113 Q185 106 211 132 Q218 151 203 166 Q177 183 137 181 Q105 177 94 157Z" fill="#8a6347"/>
+    <path d="M119 133 Q149 116 184 128 Q171 153 137 160Z" fill="#c9834f"/>
+    <circle cx="214" cy="118" r="25" fill="#4c4039"/>
+    <path d="M234 119 L272 126 L235 133Z" fill="#2f2822"/>
+    <circle cx="221" cy="111" r="4" fill="#111"/>
+    <path d="M97 154 L60 138 L90 166Z" fill="#665146"/>
+    <path d="M145 179 L141 204 M177 178 L181 204" stroke="#4d433a" stroke-width="3.2" stroke-linecap="round"/>
+    </svg>`;
+
+  if(b.type==='starling') return base+`
+    <!-- Estorninho-malhado: corpo compacto, bico fino, malhado claro -->
+    <path d="M74 153 Q96 117 145 109 Q193 101 221 129 Q229 151 211 168 Q181 188 133 183 Q95 179 74 153Z" fill="#263033"/>
+    <path d="M102 133 Q145 106 190 120 Q171 151 125 162Z" fill="#355047"/>
+    <circle cx="225" cy="116" r="27" fill="#232c2f"/>
+    <path d="M248 116 L301 121 L249 128Z" fill="#d6ab55"/>
+    <circle cx="233" cy="109" r="4" fill="#111"/>
+    <path d="M78 151 Q52 146 35 135 Q56 133 82 140Z" fill="#1a2326"/>
+    <g fill="#eee3cb">
+      <circle cx="112" cy="128" r="3"/><circle cx="127" cy="119" r="2.5"/><circle cx="142" cy="137" r="3"/>
+      <circle cx="158" cy="123" r="2.5"/><circle cx="176" cy="143" r="3"/><circle cx="194" cy="130" r="2.5"/>
+      <circle cx="218" cy="108" r="2.5"/><circle cx="230" cy="123" r="2.2"/><circle cx="129" cy="158" r="2.5"/>
+    </g>
+    <path d="M143 182 L139 205 M179 180 L184 205" stroke="#9d866f" stroke-width="3.2" stroke-linecap="round"/>
+    </svg>`;
+
+  return base+`</svg>`;
+}
+
+
+function buildBoxes(){
+  const wrap=document.getElementById('boxes');
+  wrap.innerHTML='';
+  const parts=strip(current().name).split('-');
+  parts.forEach((part,pi)=>{
+    const group=document.createElement('div'); group.className='word-group';
+    [...part].forEach(ch=>{
+      if(ch===' ')return;
+      const inp=document.createElement('input');
+      inp.type='text'; inp.maxLength=1; inp.autocomplete='off'; inp.spellcheck=false; inp.className='letter-box';
+      group.appendChild(inp);
+    });
+    wrap.appendChild(group);
+    if(pi<parts.length-1){const dash=document.createElement('span');dash.className='dash';dash.textContent='–';wrap.appendChild(dash);}
+  });
+  const inputs=[...wrap.querySelectorAll('.letter-box')];
+  inputs.forEach((inp,i)=>{
+    inp.addEventListener('input',()=>{
+      inp.value=strip(inp.value).replace(/[^A-Z]/g,'').slice(0,1);
+      inp.classList.remove('letter-ok','letter-bad');
+      if(inp.value&&i<inputs.length-1)inputs[i+1].focus();
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!inp.value&&i>0)inputs[i-1].focus();
+      if(e.key==='ArrowLeft'&&i>0){e.preventDefault();inputs[i-1].focus();}
+      if(e.key==='ArrowRight'&&i<inputs.length-1){e.preventDefault();inputs[i+1].focus();}
+      if(e.key==='Enter'){e.preventDefault();check();}
+    });
+  });
+  if(inputs.length)inputs[0].focus();
+}
+function expected(){return encode(current().name).replace(/[^A-Z]/g,'');}
+
+function load(){
+  const b=current(); attempts=0; solved=false; usedHint=false;
+  document.getElementById('birdArt').innerHTML=birdSVG(b);
+  document.getElementById('birdName').textContent=b.name;
+  document.getElementById('clue').textContent=b.clue;
+  document.getElementById('progress').textContent=`${index+1}/${birds.length}`;
+  document.getElementById('feedback').textContent='Consulta a cifra no topo e escreve uma letra em cada quadrado.';
+  ['check','clear','hint','solution'].forEach(id=>document.getElementById(id).disabled=false);
+  document.getElementById('next').disabled=true;
+  buildBoxes();
+}
+function check(){
+  if(solved)return;
+  const inputs=[...document.querySelectorAll('.letter-box')], exp=expected();
+  if(inputs.some(i=>!i.value)){document.getElementById('feedback').textContent='Ainda faltam letras. Preenche todos os quadrados.';return;}
+  attempts++; let all=true;
+  inputs.forEach((inp,i)=>{
+    inp.classList.remove('letter-ok','letter-bad');
+    if(inp.value.toUpperCase()===exp[i])inp.classList.add('letter-ok');
+    else{inp.classList.add('letter-bad');all=false;}
+  });
+  if(all){
+    solved=true; const pts=attempts===1&&!usedHint?10:5; score+=pts;
+    document.getElementById('score').textContent=score;
+    inputs.forEach(i=>i.disabled=true);
+    ['check','clear','hint','solution'].forEach(id=>document.getElementById(id).disabled=true);
+    document.getElementById('next').disabled=false;
+    document.getElementById('feedback').innerHTML=`<strong>✅ Muito bem!</strong> ${current().name} → <strong>${encode(current().name)}</strong>. +${pts} pontos`;
+  } else document.getElementById('feedback').innerHTML='🔎 As letras a <strong>verde</strong> estão corretas. Revê as letras a vermelho.';
+}
+function clearBoxes(){
+  if(solved)return;
+  const inputs=[...document.querySelectorAll('.letter-box')];
+  inputs.forEach(i=>{i.value='';i.classList.remove('letter-ok','letter-bad')});
+  document.getElementById('feedback').textContent='Resposta limpa. Tenta novamente usando a cifra.';
+  if(inputs.length)inputs[0].focus();
+}
+function hint(){
+  if(solved)return; usedHint=true;
+  const inputs=[...document.querySelectorAll('.letter-box')], exp=expected();
+  let pos=inputs.findIndex(i=>!i.value); if(pos<0)pos=0;
+  inputs[pos].value=exp[pos]; inputs[pos].classList.add('letter-ok');
+  document.getElementById('feedback').textContent='💡 Coloquei uma letra correta para te ajudar.';
+  if(pos<inputs.length-1)inputs[pos+1].focus();
+}
+function solution(){
+  if(solved)return;
+  const inputs=[...document.querySelectorAll('.letter-box')], exp=expected();
+  inputs.forEach((inp,i)=>{inp.value=exp[i];inp.classList.remove('letter-bad');inp.classList.add('letter-ok');inp.disabled=true;});
+  solved=true;
+  ['check','clear','hint','solution'].forEach(id=>document.getElementById(id).disabled=true);
+  document.getElementById('next').disabled=false;
+  document.getElementById('feedback').innerHTML=`🧩 Solução: <strong>${current().name} → ${encode(current().name)}</strong>.`;
+}
+function next(){
+  if(!solved)return;
+  index++;
+  if(index>=birds.length){
+    document.getElementById('finish').classList.add('show');
+    document.getElementById('finalText').textContent=`Conseguiste ${score} pontos. Já és especialista em códigos secretos da Barrinha!`;
+    document.getElementById('next').disabled=true;
+    return;
+  }
+  load();
+}
+function restart(){
+  order=shuffle([...Array(birds.length).keys()]); index=0; score=0;
+  document.getElementById('score').textContent='0';
+  document.getElementById('finish').classList.remove('show');
+  load();
+}
+document.getElementById('check').addEventListener('click',check);
+document.getElementById('clear').addEventListener('click',clearBoxes);
+document.getElementById('hint').addEventListener('click',hint);
+document.getElementById('solution').addEventListener('click',solution);
+document.getElementById('next').addEventListener('click',next);
+document.getElementById('restart').addEventListener('click',restart);
+restart();
+</script>
+</body>
+</html>
